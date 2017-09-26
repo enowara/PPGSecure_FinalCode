@@ -1,29 +1,39 @@
-function NotNormalized_ReplayNov29(savefolder, folderMain, folderReal, folderAttackf, folderAttackh, dLibFolder)
-
+% function NotNormalized_ReplayNov29(savefolder, folderMain, folderReal, folderAttackf, folderAttackh, dLibFolder)
 % no normalization
-folderMain = '/media/ewa/SH/ReplayAttackDirectories/';
-folderReal = 'train/real/';
-folderAttackf = 'train/attack/fixed/';  % both contain photo, vid in adverse and controlled
-folderAttackh = 'train/attack/hand/';
+folderMain = '/media/ewa/SH/DatasetsAntiSpoof/3dmadDirectories/';
+%'/media/ewa/SH/ReplayAttackDirectories/';
+% folderReal = 'train/real/';
+% folderAttackf = 'train/attack/fixed/';  % both contain photo, vid in adverse and controlled
+% folderAttackh = 'train/attack/hand/';
 % 
-% savefolder = 'Nov30NotNormReplay'; % with gaussian filtering and saving the whole raw PPG matrix
+savefolder = 'Sep26_3DMAD_PPG'; % with gaussian filtering and saving the whole raw PPG matrix
 mkdir(savefolder);
-load('EwaHighPass.mat')
-load('EwaLowPass.mat')
+load('../EwaHighPass.mat')
+load('../EwaLowPass.mat')
+load('../highpass_05_30.mat')
+load('../lowpass_5_30.mat')
+
+addpath('/home/ewa/Dropbox (Rice Scalable Health)/DocumentsUbuntu/Liveness_Detection_Security/Code/BPADCameraVitals2016')
 
 mkdir(savefolder);
 for f = 1:3
-    if f == 1
-        folderEnd = folderReal;
-    end
-    if f == 2
-        folderEnd = folderAttackf;
+%     if f == 1
+%         folderEnd = folderReal;
+%     end
+%     if f == 2
+%         folderEnd = folderAttackf;
+% 
+%     end
+%     if f == 3
+%         folderEnd = folderAttackh;
+%     end
+    
 
-    end
-    if f == 3
-        folderEnd = folderAttackh;
-    end
-    fileNameList = dir([[folderMain folderEnd] ['*' '.mov']]); %
+    % masks 
+    folderEnd = ['Data0' num2str(f) 'Keep/'];
+    
+%     fileNameList = dir([[folderMain folderEnd] ['*' '.mov']]); %
+    fileNameList = dir([[folderMain folderEnd] ['*' '.avi']]); %
     for i =1:length(fileNameList)
         imgCells{i} = fileNameList(i).name;  
     end
@@ -46,15 +56,16 @@ for m = 1:length(fileNameList)
             vg = permute(vg,[1,2,4,3]);
 %             firstFrame = frames(:,:,:,1);
             firstFrame = vg(:,:,1);
-            figure, imshow(firstFrame)
+%             figure, imshow(firstFrame)
 %% face ROI
 %      load(['Data/IDAP1stFrameNew/' num2str(f) 'Dlib/dLib-' vidName '.png.mat'])
-     load([dLibFolder num2str(f) 'Dlib/dLib-' vidName '.png.mat'])
+%      load([dLibFolder num2str(f) 'Dlib/dLib-' vidName '.png.mat'])
+    load(['/media/ewa/Data/PreliminaryResultsToCleanUp/FromBPADCameraVitals2016/Data/3DMAD1stFrame/Data0' num2str(f) 'Dlib/dLib-' vidName(1:end-4) '_C.avi' '.png.mat'])
 
         firstPoints = pointsResized;
-        figure, imshow(firstFrame)
-        hold on
-        plot(firstPoints(:,1), firstPoints(:,2), '.g', 'MarkerSize',15)
+%         figure, imshow(firstFrame)
+%         hold on
+%         plot(firstPoints(:,1), firstPoints(:,2), '.g', 'MarkerSize',15)
 
 % define faceROI
  whole = [firstPoints(1:68,1), firstPoints(1:68,2)];
@@ -138,9 +149,9 @@ gridPointsF = pointsList(:,foreheadGrid,:);
 gridPointsL = cat(3, pointsList(:,inL,1), pointsList(:,inL,2));
 gridPointsR = cat(3, pointsList(:,inR,1), pointsList(:,inR,2));
 
-figure, imshow(firstFrame)
-hold on
-plot(gridPointsF(1,:,1), gridPointsF(1,:,2), '.g', 'MarkerSize',15)
+% figure, imshow(firstFrame)
+% hold on
+% plot(gridPointsF(1,:,1), gridPointsF(1,:,2), '.g', 'MarkerSize',15)
 %% get PPG
 nn = 10; 
 [PPGrawF] = getPPG(vgSpatFilt, gridPointsF, nn); %     PPGraw - no mean subtraction or temporal filtering
@@ -172,10 +183,10 @@ for c = 1:size(gridPointsF,2)
         PPGraw1 = PPGF(:,c);  % with mean subtracted
         PPGraw2(:,c) = PPGraw1;
            PPG2filt0 =  PPGraw2(:,c);
-            PPG2filt1 = filtfilt(b, 1, PPG2filt0); %low pass
-           PPG2filt2 = filtfilt(b_i, a_i, PPG2filt1); % high pass
-%            PPG2filt1 = filtfilt(lowpass_5,1,PPG2filt0);  %low pass
-%            PPG2filt2 = filtfilt(highpass_05,IIR_part,PPG2filt1); % high pass
+%             PPG2filt1 = filtfilt(b, 1, PPG2filt0); %low pass
+%            PPG2filt2 = filtfilt(b_i, a_i, PPG2filt1); % high pass
+           PPG2filt1 = filtfilt(lowpass_5,1,PPG2filt0);  %low pass
+           PPG2filt2 = filtfilt(highpass_05,IIR_part,PPG2filt1); % high pass
            PPGFfilt(:,c) = PPG2filt2;
 end
 clear PPGraw2 
@@ -184,10 +195,10 @@ for c = 1:size(gridPointsL,2)
         PPGraw1 = PPGL(:,c);  % with mean subtracted
         PPGraw2(:,c) = PPGraw1;
            PPG2filt0 =  PPGraw2(:,c);
-            PPG2filt1 = filtfilt(b, 1, PPG2filt0); %low pass
-           PPG2filt2 = filtfilt(b_i, a_i, PPG2filt1); % high pass
-%            PPG2filt1 = filtfilt(lowpass_5,1,PPG2filt0);  %low pass
-%            PPG2filt2 = filtfilt(highpass_05,IIR_part,PPG2filt1); % high pass
+%             PPG2filt1 = filtfilt(b, 1, PPG2filt0); %low pass
+%            PPG2filt2 = filtfilt(b_i, a_i, PPG2filt1); % high pass
+           PPG2filt1 = filtfilt(lowpass_5,1,PPG2filt0);  %low pass
+           PPG2filt2 = filtfilt(highpass_05,IIR_part,PPG2filt1); % high pass
            PPGLfilt(:,c) = PPG2filt2;
 end
 clear PPGraw2 
@@ -196,10 +207,10 @@ for c = 1:size(gridPointsR,2)
         PPGraw1 = PPGR(:,c);  % with mean subtracted
         PPGraw2(:,c) = PPGraw1;
            PPG2filt0 =  PPGraw2(:,c);
-            PPG2filt1 = filtfilt(b, 1, PPG2filt0); %low pass
-           PPG2filt2 = filtfilt(b_i, a_i, PPG2filt1); % high pass
-%            PPG2filt1 = filtfilt(lowpass_5,1,PPG2filt0);  %low pass
-%            PPG2filt2 = filtfilt(highpass_05,IIR_part,PPG2filt1); % high pass
+%             PPG2filt1 = filtfilt(b, 1, PPG2filt0); %low pass
+%            PPG2filt2 = filtfilt(b_i, a_i, PPG2filt1); % high pass
+           PPG2filt1 = filtfilt(lowpass_5,1,PPG2filt0);  %low pass
+           PPG2filt2 = filtfilt(highpass_05,IIR_part,PPG2filt1); % high pass
            PPGRfilt(:,c) = PPG2filt2;
 end
 
@@ -214,4 +225,4 @@ disp([num2str(f) '-'   num2str(m)])
     end
     end 
 end
-end
+% end
